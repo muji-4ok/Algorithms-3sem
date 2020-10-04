@@ -13,7 +13,7 @@
 constexpr int ALPHABET_SIZE = 26;
 constexpr int ROOT_ID = 0;
 
-int char_num(char c) { return c - 'a'; }
+int CharNum(char c) { return c - 'a'; }
 
 struct Node {
   Node(int id, int parent_id, char parent_char, bool is_terminal)
@@ -37,109 +37,109 @@ struct Node {
 class Trie {
  public:
   Trie() : nodes({Node(ROOT_ID, -1, 0, false)}) {}
-  void add_string(const std::string &s, int id);
-  Node *get_node(int id) {
+  void AddString(const std::string &s, int id);
+  Node *GetNode(int id) {
     assert(0 <= id && id < nodes.size());
     return nodes.data() + id;
   }
-  Node *root() { return get_node(ROOT_ID); }
-  int get_go(int from_id, char c);
-  int get_suff_link(int from_id);
-  int get_compressed_suff_link(int from_id);
+  Node *Root() { return GetNode(ROOT_ID); }
+  int GetGo(int from_id, char c);
+  int GetSuffLink(int from_id);
+  int GetCompressedSuffLink(int from_id);
 
  private:
   std::vector<Node> nodes;
 };
 
-void Trie::add_string(const std::string &s, int id) {
+void Trie::AddString(const std::string &s, int id) {
   int cur_node_id = ROOT_ID;
 
   for (char c : s) {
-    if (get_node(cur_node_id)->children_ids[char_num(c)] == -1) {
-      get_node(cur_node_id)->children_ids[char_num(c)] = nodes.size();
+    if (GetNode(cur_node_id)->children_ids[CharNum(c)] == -1) {
+      GetNode(cur_node_id)->children_ids[CharNum(c)] = nodes.size();
       nodes.emplace_back(nodes.size(), cur_node_id, c, false);
     }
 
-    cur_node_id = get_node(cur_node_id)->children_ids[char_num(c)];
+    cur_node_id = GetNode(cur_node_id)->children_ids[CharNum(c)];
   }
 
-  get_node(cur_node_id)->is_terminal = true;
-  get_node(cur_node_id)->string_ids.push_back(id);
+  GetNode(cur_node_id)->is_terminal = true;
+  GetNode(cur_node_id)->string_ids.push_back(id);
 }
 
-int Trie::get_go(int from_id, char c) {
-  Node *from = get_node(from_id);
+int Trie::GetGo(int from_id, char c) {
+  Node *from = GetNode(from_id);
 
-  if (from->go_ids[char_num(c)] == -1) {
-    if (from->children_ids[char_num(c)] != -1)
-      from->go_ids[char_num(c)] = from->children_ids[char_num(c)];
+  if (from->go_ids[CharNum(c)] == -1) {
+    if (from->children_ids[CharNum(c)] != -1)
+      from->go_ids[CharNum(c)] = from->children_ids[CharNum(c)];
     else if (from_id == ROOT_ID)
-      from->go_ids[char_num(c)] = ROOT_ID;
+      from->go_ids[CharNum(c)] = ROOT_ID;
     else
-      from->go_ids[char_num(c)] = get_go(get_suff_link(from_id), c);
+      from->go_ids[CharNum(c)] = GetGo(GetSuffLink(from_id), c);
   }
 
-  return from->go_ids[char_num(c)];
+  return from->go_ids[CharNum(c)];
 }
 
-int Trie::get_suff_link(int from_id) {
-  Node *from = get_node(from_id);
+int Trie::GetSuffLink(int from_id) {
+  Node *from = GetNode(from_id);
 
   if (from->suff_link_id == -1) {
     if (from_id == ROOT_ID || from->parent_id == ROOT_ID)
       from->suff_link_id = ROOT_ID;
     else
-      from->suff_link_id = get_go(get_suff_link(from->parent_id), from->parent_char);
+      from->suff_link_id = GetGo(GetSuffLink(from->parent_id), from->parent_char);
   }
 
   return from->suff_link_id;
 }
 
-int Trie::get_compressed_suff_link(int from_id) {
-  Node *from = get_node(from_id);
+int Trie::GetCompressedSuffLink(int from_id) {
+  Node *from = GetNode(from_id);
 
   if (from->compressed_suff_link_id == -1) {
-    int suff_link_id = get_suff_link(from_id);
+    int suff_link_id = GetSuffLink(from_id);
 
-    if (get_node(suff_link_id)->is_terminal)
+    if (GetNode(suff_link_id)->is_terminal)
       from->compressed_suff_link_id = suff_link_id;
     else if (suff_link_id == ROOT_ID)
       from->compressed_suff_link_id = ROOT_ID;
     else
-      from->compressed_suff_link_id = get_compressed_suff_link(suff_link_id);
+      from->compressed_suff_link_id = GetCompressedSuffLink(suff_link_id);
   }
 
   return from->compressed_suff_link_id;
 }
 
 template<typename Visitor>
-void find_occurences(const std::string &haystack,
-                     const std::vector<std::string> &needles,
-                     Visitor &&visitor) {
+void FindOccurences(const std::string &haystack,
+                    const std::vector<std::string> &needles,
+                    Visitor &&visitor) {
   Trie trie;
 
   for (int i = 0; i < needles.size(); ++i)
-    trie.add_string(needles[i], i);
+    trie.AddString(needles[i], i);
 
   int cur_node_id = ROOT_ID;
 
   for (int i = 0; i < haystack.size(); ++i) {
     char c = haystack[i];
-    cur_node_id = trie.get_go(cur_node_id, c);
+    cur_node_id = trie.GetGo(cur_node_id, c);
     int terminal_node_id =
-        trie.get_node(cur_node_id)->is_terminal ? cur_node_id : trie.get_compressed_suff_link(
+        trie.GetNode(cur_node_id)->is_terminal ? cur_node_id : trie.GetCompressedSuffLink(
             cur_node_id);
 
     while (terminal_node_id != ROOT_ID) {
-      for (int needle_id : trie.get_node(terminal_node_id)->string_ids)
+      for (int needle_id : trie.GetNode(terminal_node_id)->string_ids)
         visitor(i - needles[needle_id].size() + 1, needle_id);
 
-      terminal_node_id = trie.get_compressed_suff_link(terminal_node_id);
+      terminal_node_id = trie.GetCompressedSuffLink(terminal_node_id);
     }
   }
 }
 
-std::tuple<std::vector<std::string>, std::vector<int>> split_regex(const std::string &regex) {
+std::tuple<std::vector<std::string>, std::vector<int>> SplitRegex(const std::string &regex) {
   std::vector<std::string> needles;
   std::vector<int> regex_positions;
   std::string cur_needle;
@@ -167,12 +167,12 @@ std::tuple<std::vector<std::string>, std::vector<int>> split_regex(const std::st
 }
 
 template<typename Visitor>
-void find_regex_matches(const std::string &haystack, const std::string &regex, Visitor &&visitor) {
-  auto[needles, regex_positions] = split_regex(regex);
+void FindRegexMatches(const std::string &haystack, const std::string &regex, Visitor &&visitor) {
+  auto[needles, regex_positions] = SplitRegex(regex);
   std::vector<int> needle_counts(haystack.size(), 0);
 
   if (!needles.empty()) {
-    find_occurences(haystack, needles, [&](int hay_position, int needle_id) {
+    FindOccurences(haystack, needles, [&](int hay_position, int needle_id) {
       int index = hay_position - regex_positions[needle_id];
 
       if (index >= 0)
@@ -192,6 +192,6 @@ void find_regex_matches(const std::string &haystack, const std::string &regex, V
 int main() {
   std::string haystack, regex;
   std::cin >> regex >> haystack;
-  find_regex_matches(haystack, regex, [](int index) { std::cout << index << ' '; });
+  FindRegexMatches(haystack, regex, [](int index) { std::cout << index << ' '; });
 }
 
