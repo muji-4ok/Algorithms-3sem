@@ -8,7 +8,7 @@ struct ZBlock {
   int right;
 };
 
-std::vector<int> z_func(const std::string &s) {
+std::vector<int> ZFunc(const std::string &s) {
   int n = s.size();
   std::vector<int> z_value(n, 0);
   z_value[0] = n;
@@ -36,11 +36,11 @@ std::vector<int> z_func(const std::string &s) {
 }
 
 template<typename Visitor>
-void find_matches(const std::string &haystack,
-                  const std::string &needle,
-                  Visitor &&visitor) {
+void FindMatches(const std::string &haystack,
+                 const std::string &needle,
+                 Visitor &&visitor) {
   int n = haystack.size();
-  std::vector<int> needle_z_value = z_func(needle);
+  std::vector<int> needle_z_value = ZFunc(needle);
   ZBlock right_most_block{0, -1};
 
   for (int i = 0; i < n; ++i) {
@@ -69,7 +69,7 @@ void find_matches(const std::string &haystack,
 int main() {
   std::string needle, haystack;
   std::cin >> needle >> haystack;
-  find_matches(haystack, needle, [](int i) { std::cout << i << ' '; });
+  FindMatches(haystack, needle, [](int i) { std::cout << i << ' '; });
   std::cout << '\n';
 
   return 0;
