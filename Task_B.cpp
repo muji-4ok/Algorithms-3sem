@@ -11,81 +11,81 @@ struct SubPalindrome {
   int length;
 };
 
-std::vector<int> countOddPalindromes(const std::string &s) {
+std::vector<int> CountOddPalindromes(const std::string &s) {
   int n = s.size();
-  std::vector<int> palidromeLength(n, 0);
-  SubPalindrome rightMostBlock{0, 0};
+  std::vector<int> palidrome_length(n, 0);
+  SubPalindrome right_most_block{0, 0};
 
   for (int i = 0; i < n; ++i) {
-    int blockLeft = rightMostBlock.center - rightMostBlock.length;
-    int blockRight = rightMostBlock.center + rightMostBlock.length;
+    int block_left = right_most_block.center - right_most_block.length;
+    int block_right = right_most_block.center + right_most_block.length;
     int length = 0;
 
-    if (i <= blockRight) {
-      int mirroredI = 2 * rightMostBlock.center - i;
+    if (i <= block_right) {
+      int mirrored_i = 2 * right_most_block.center - i;
 
-      if (blockLeft < mirroredI - palidromeLength[mirroredI]) {
-        palidromeLength[i] = palidromeLength[mirroredI];
+      if (block_left < mirrored_i - palidrome_length[mirrored_i]) {
+        palidrome_length[i] = palidrome_length[mirrored_i];
         continue;
       }
 
-      length = std::min(palidromeLength[mirroredI], blockRight - i);
+      length = std::min(palidrome_length[mirrored_i], block_right - i);
     }
 
     while (0 <= i - length - 1 && i + length + 1 < s.size()
         && s[i - length - 1] == s[i + length + 1])
       ++length;
 
-    palidromeLength[i] = length;
-    rightMostBlock = {i, length};
+    palidrome_length[i] = length;
+    right_most_block = {i, length};
   }
 
-  return palidromeLength;
+  return palidrome_length;
 }
 
-std::vector<int> countEvenPalindromes(const std::string &s) {
+std::vector<int> CountEvenPalindromes(const std::string &s) {
   int n = s.size();
-  std::vector<int> palidromeLength(n, 0);
+  std::vector<int> palidrome_length(n, 0);
   // Center is lower
-  SubPalindrome rightMostBlock{-1, 0};
+  SubPalindrome right_most_block{-1, 0};
 
   for (int i = 0; i < n - 1; ++i) {
-    int blockLeft = rightMostBlock.center - rightMostBlock.length + 1;
-    int blockRight = rightMostBlock.center + rightMostBlock.length;
+    int blockLeft = right_most_block.center - right_most_block.length + 1;
+    int blockRight = right_most_block.center + right_most_block.length;
     int length = 0;
 
     if (i <= blockRight) {
-      int mirroredI = 2 * rightMostBlock.center - i;
+      int mirroredI = 2 * right_most_block.center - i;
 
-      if (blockLeft < mirroredI - palidromeLength[mirroredI] + 1) {
-        palidromeLength[i] = palidromeLength[mirroredI];
+      if (blockLeft < mirroredI - palidrome_length[mirroredI] + 1) {
+        palidrome_length[i] = palidrome_length[mirroredI];
         continue;
       }
 
       if (mirroredI >= 0)
-        length = std::max(0, std::min(palidromeLength[mirroredI], blockRight - i - 1));
+        length = std::max(0, std::min(palidrome_length[mirroredI], blockRight - i - 1));
     }
 
     while (0 <= i - length && i + length + 1 < s.size()
         && s[i - length] == s[i + length + 1])
       ++length;
 
-    palidromeLength[i] = length;
-    rightMostBlock = {i, length};
+    palidrome_length[i] = length;
+    right_most_block = {i, length};
   }
 
-  return palidromeLength;
+  return palidrome_length;
 }
 
-long long countSubPalidromes(const std::string &s) {
-  std::vector<int> oddLengths = countOddPalindromes(s);
-  std::vector<int> evenLengths = countEvenPalindromes(s);
+long long CountSubPalidromes(const std::string &s) {
+  std::vector<int> odd_lengths = CountOddPalindromes(s);
+  std::vector<int> even_lengths = CountEvenPalindromes(s);
   long long result = 0;
 
-  for (int l : oddLengths)
+  for (int l : odd_lengths)
     result += l;
 
-  for (int l : evenLengths)
+  for (int l : even_lengths)
     result += l;
 
   return result;
@@ -94,5 +94,5 @@ long long countSubPalidromes(const std::string &s) {
 int main() {
   std::string s;
   std::cin >> s;
-  std::cout << countSubPalidromes(s) << '\n';
+  std::cout << CountSubPalidromes(s) << '\n';
 }
