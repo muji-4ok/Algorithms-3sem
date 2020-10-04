@@ -8,52 +8,52 @@ struct ZBlock {
   int right;
 };
 
-std::vector<int> zFunc(const std::string &s) {
+std::vector<int> z_func(const std::string &s) {
   int n = s.size();
-  std::vector<int> zValue(n, 0);
-  zValue[0] = n;
-  ZBlock rightMostBlock{0, 0};
+  std::vector<int> z_value(n, 0);
+  z_value[0] = n;
+  ZBlock right_most_block{0, 0};
 
   for (int i = 1; i < n; ++i) {
     int j = i;
 
-    if (i <= rightMostBlock.right) {
-      if (zValue[i - rightMostBlock.left] + i < rightMostBlock.right) {
-        zValue[i] = zValue[i - rightMostBlock.left];
+    if (i <= right_most_block.right) {
+      if (z_value[i - right_most_block.left] + i < right_most_block.right) {
+        z_value[i] = z_value[i - right_most_block.left];
         continue;
       }
 
-      j = std::min(rightMostBlock.right + 1, n);
+      j = std::min(right_most_block.right + 1, n);
     }
     while (j < s.size() && s[j] == s[j - i])
       ++j;
 
-    zValue[i] = j - i;
-    rightMostBlock = {i, j - 1};
+    z_value[i] = j - i;
+    right_most_block = {i, j - 1};
   }
 
-  return zValue;
+  return z_value;
 }
 
 template<typename Visitor>
-void findMatches(const std::string &haystack,
-                 const std::string &needle,
-                 Visitor &&visitor) {
+void find_matches(const std::string &haystack,
+                  const std::string &needle,
+                  Visitor &&visitor) {
   int n = haystack.size();
-  std::vector<int> needleZValue = zFunc(needle);
-  ZBlock rightMostBlock{0, -1};
+  std::vector<int> needle_z_value = z_func(needle);
+  ZBlock right_most_block{0, -1};
 
   for (int i = 0; i < n; ++i) {
     int j = i;
 
-    if (i <= rightMostBlock.right) {
-      if (needleZValue[i - rightMostBlock.left] + i < rightMostBlock.right) {
-        if (needleZValue[i - rightMostBlock.left] == needle.size())
+    if (i <= right_most_block.right) {
+      if (needle_z_value[i - right_most_block.left] + i < right_most_block.right) {
+        if (needle_z_value[i - right_most_block.left] == needle.size())
           visitor(i);
         continue;
       }
 
-      j = std::min(rightMostBlock.right + 1, n);
+      j = std::min(right_most_block.right + 1, n);
     }
 
     while (j < n && j - i < needle.size() && haystack[j] == needle[j - i])
@@ -62,14 +62,14 @@ void findMatches(const std::string &haystack,
     if (j - i == needle.size())
       visitor(i);
 
-    rightMostBlock = {i, j - 1};
+    right_most_block = {i, j - 1};
   }
 }
 
 int main() {
   std::string needle, haystack;
   std::cin >> needle >> haystack;
-  findMatches(haystack, needle, [](int i) { std::cout << i << ' '; });
+  find_matches(haystack, needle, [](int i) { std::cout << i << ' '; });
   std::cout << '\n';
 
   return 0;
