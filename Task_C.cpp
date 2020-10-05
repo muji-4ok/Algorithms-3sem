@@ -36,11 +36,11 @@ struct Node {
 
 class Trie {
  public:
-  Trie() : nodes({Node(ROOT_ID, -1, 0, false)}) {}
+  Trie() : nodes_({Node(ROOT_ID, -1, 0, false)}) {}
   void AddString(const std::string &s, int id);
   Node *GetNode(int id) {
-    assert(0 <= id && id < nodes.size());
-    return nodes.data() + id;
+    assert(0 <= id && id < nodes_.size());
+    return nodes_.data() + id;
   }
   Node *Root() { return GetNode(ROOT_ID); }
   int GetGo(int from_id, char c);
@@ -48,7 +48,7 @@ class Trie {
   int GetCompressedSuffLink(int from_id);
 
  private:
-  std::vector<Node> nodes;
+  std::vector<Node> nodes_;
 };
 
 void Trie::AddString(const std::string &s, int id) {
@@ -56,8 +56,8 @@ void Trie::AddString(const std::string &s, int id) {
 
   for (char c : s) {
     if (GetNode(cur_node_id)->children_ids[CharNum(c)] == -1) {
-      GetNode(cur_node_id)->children_ids[CharNum(c)] = nodes.size();
-      nodes.emplace_back(nodes.size(), cur_node_id, c, false);
+      GetNode(cur_node_id)->children_ids[CharNum(c)] = nodes_.size();
+      nodes_.emplace_back(nodes_.size(), cur_node_id, c, false);
     }
 
     cur_node_id = GetNode(cur_node_id)->children_ids[CharNum(c)];
