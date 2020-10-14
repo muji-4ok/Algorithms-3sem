@@ -144,26 +144,6 @@ size_t CountSubStrings(std::string s) {
   return CountSubStrings(s, suffix_array, lcp);
 }
 
-size_t CountSubStringsNaively(const std::string &s) {
-  std::unordered_set<std::string> sub_strings;
-  size_t result = 0;
-
-  for (size_t i = 0; i < s.size(); ++i)
-    for (size_t count = 1; i + count <= s.size(); ++count)
-      if (sub_strings.insert(s.substr(i, count)).second)
-        ++result;
-
-  return result;
-}
-
-template<typename Container>
-void println(Container &&container) {
-  for (auto &&x : container)
-    std::cout << x << ' ';
-
-  std::cout << '\n';
-}
-
 int main() {
   std::string s;
   std::cin >> s;
