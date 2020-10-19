@@ -11,8 +11,6 @@
 #include <set>
 #include <memory>
 
-#define DEBUG
-
 struct Node;
 
 struct Transition {
@@ -34,14 +32,7 @@ struct Node {
   std::map<char, Transition> to;
   Node *suffix_link = nullptr;
   size_t id = 0;
-  size_t first_count = 0;
-  size_t second_count = 0;
   size_t common_count = 0;
-
-  std::string label() const {
-//    return std::to_string(id);
-    return "\"" + std::to_string(id) + " : " + std::to_string(common_count) + "\"";
-  }
 };
 
 struct ActivePoint {
@@ -74,17 +65,6 @@ class SuffixTree {
                                               size_t to_start,
                                               size_t to_end);
 
- public:
-  void ExportToDot(const std::string &s, size_t read_size);
-  void ExportToDot(std::ostream &out, const std::string &s, size_t read_size);
-  void ExportNodeToDot(Node &from,
-                       std::ostream &out,
-                       const std::string &s,
-                       size_t read_size,
-                       size_t &node_id);
-  void ExportSuffLinks(Node &from, std::ostream &out);
-
- public:
   const std::string &s_;
   Node root_{};
   ActivePoint ap_{};
@@ -222,8 +202,6 @@ std::tuple<bool, bool> SuffixTree::ComputeCommonStrings(Node &from,
                                                         size_t first_length,
                                                         size_t to_start,
                                                         size_t to_end) {
-  from.first_count = 0;
-  from.second_count = 0;
   from.common_count = 0;
 
   bool has_first = false;
@@ -231,15 +209,10 @@ std::tuple<bool, bool> SuffixTree::ComputeCommonStrings(Node &from,
 
   for (auto &it : from.to) {
     if (it.second.node->to.empty()) {
-      if (it.second.start < first_length) {
+      if (it.second.start < first_length)
         has_first = true;
-        it.second.node->first_count = first_length - 1 - it.second.start;
-        it.second.node->second_count = 0;
-      } else {
+      else
         has_second = true;
-        it.second.node->first_count = 0;
-        it.second.node->second_count = *it.second.end - 1 - it.second.start;
-      }
     } else {
       auto[first, second] = ComputeCommonStrings(*it.second.node,
                                                  first_length,
@@ -251,19 +224,10 @@ std::tuple<bool, bool> SuffixTree::ComputeCommonStrings(Node &from,
       if (first && second)
         from.common_count += it.second.node->common_count;
     }
-
-    from.first_count += it.second.node->first_count;
-    from.second_count += it.second.node->second_count;
   }
 
   if (&from != &root_ && has_first && has_second)
     from.common_count += to_end - to_start;
-
-  if (&from != &root_ && has_first)
-    from.first_count += to_end - to_start;
-
-  if (&from != &root_ && has_second)
-    from.second_count += to_end - to_start;
 
   return {has_first, has_second};
 }
@@ -298,91 +262,14 @@ std::string SuffixTree::FindKthCommon(size_t k) {
   }
 }
 
-std::set<std::string> ComputeSubstringsNaive(const std::string &s) {
-  std::set<std::string> substrings;
-
-  for (size_t i = 0; i < s.size(); ++i)
-    for (size_t j = 1; j <= s.size() - i; ++j)
-      substrings.insert(s.substr(i, j));
-
-  return substrings;
-}
-
-void SuffixTree::ExportToDot(const std::string &s, size_t read_size) {
-#ifndef DEBUG
-  return;
-#endif
-
-  std::ofstream file("step_" + std::to_string(step_id_++) + ".dot");
-  ExportToDot(file, s, read_size);
-}
-
-void SuffixTree::ExportToDot(std::ostream &out, const std::string &s, size_t read_size) {
-  out << "digraph G {\n";
-  out << "rankdir = LR;\n";
-  out << "nodesep = 0.5;\n";
-  size_t node_id = 0;
-  root_.id = node_id;
-  ExportNodeToDot(root_, out, s, read_size, node_id);
-  ExportSuffLinks(root_, out);
-  out << "}\n";
-}
-
-void SuffixTree::ExportNodeToDot(Node &from,
-                                 std::ostream &out,
-                                 const std::string &s,
-                                 size_t read_size,
-                                 size_t &node_id) {
-  if (&from == ap_.node)
-    out << from.label() << R"( [color="red", style="filled"])" << "\n";
-
-  for (const auto &it : from.to) {
-    std::string label;
-    size_t end_index = it.second.end.value_or(read_size) - it.second.start;
-
-    if (&from == ap_.node && it.first == ap_.c)
-      label = s.substr(it.second.start, ap_.length) + "|"
-          + s.substr(it.second.start + ap_.length, end_index - ap_.length);
-    else
-      label = s.substr(it.second.start, end_index);
-
-    it.second.node->id = node_id++;
-
-    out << from.label() << " -> " << it.second.node->label() << " [label=\"" << label
-        << "\"";
-    out << R"(, color="blue"])";
-    out << '\n';
-
-    ExportNodeToDot(*it.second.node, out, s, read_size, node_id);
-  }
-}
-
-void SuffixTree::ExportSuffLinks(Node &from, std::ostream &out) {
-  if (from.suffix_link)
-    out << from.label() << " -> " << from.suffix_link->label() << R"( [style="dotted"])" << "\n";
-
-  for (const auto &it : from.to)
-    ExportSuffLinks(*it.second.node, out);
-}
-
 int main() {
   std::ios_base::sync_with_stdio(false);
   std::string s;
   std::string t;
   std::cin >> s >> t;
-//  s = "jaskldfjwoikskskskskskkkkkkwkwaiiiqu";
-//  t = "ajajajajjaaaaiiaiujwjkwkwkjskskjkskskskskksksks";
-//  auto subs_s = ComputeSubstringsNaive(s);
-//  auto subs_t = ComputeSubstringsNaive(t);
-//  std::vector<std::string> common_subs;
-//  std::set_intersection(subs_s.begin(),
-//                        subs_s.end(),
-//                        subs_t.begin(),
-//                        subs_t.end(),
-//                        std::inserter(common_subs, common_subs.begin()));
-//  std::cout << common_subs.size() << '\n';
   s += "$";
   t += "#";
+
   size_t k;
   std::cin >> k;
   --k;
@@ -397,32 +284,4 @@ int main() {
     std::cout << "-1\n";
   else
     std::cout << result << '\n';
-
-//  suffix_tree.ExportToDot(combined, combined.size());
-//  std::cout << suffix_tree.root_.first_count << '\n';
-//  std::cout << suffix_tree.root_.second_count << '\n';
-//  std::cout << suffix_tree.root_.common_count << '\n';
-
-//  std::vector<std::string> common_algo;
-//  common_algo.reserve(suffix_tree.root_.common_count);
-
-//  if (suffix_tree.FindKthCommon(1099999871).empty())
-//    std::cout << "-1\n";
-
-//  for (size_t k = 0; k < suffix_tree.root_.common_count; ++k)
-//    common_algo.push_back(suffix_tree.FindKthCommon(k));
-
-//  if (common_subs != common_algo) {
-//    std::cout << "REAL:\n";
-//
-//    for (const auto &sub : common_subs)
-//      std::cout << sub << '\n';
-//
-//    std::cout << "ALGO:\n";
-//
-//    for (const auto &sub : common_algo)
-//      std::cout << sub << '\n';
-//  } else {
-//    std::cout << "All good\n";
-//  }
 }
