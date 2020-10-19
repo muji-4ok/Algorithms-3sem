@@ -2,7 +2,6 @@
 // Created by egork on 14.10.2020.
 //
 #include <iostream>
-#include <fstream>
 #include <algorithm>
 #include <vector>
 #include <tuple>
@@ -31,7 +30,6 @@ struct Transition {
 struct Node {
   std::map<char, Transition> to;
   Node *suffix_link = nullptr;
-  size_t id = 0;
   size_t common_count = 0;
 };
 
@@ -44,7 +42,7 @@ struct ActivePoint {
 
 class SuffixTree {
  public:
-  SuffixTree(const std::string &s) : s_(s) {
+  explicit SuffixTree(const std::string &s) : s_(s) {
     ap_.node = &root_;
     AddString();
   }
@@ -70,7 +68,6 @@ class SuffixTree {
   ActivePoint ap_{};
   size_t remainder_ = 0;
   size_t node_count_ = 0;
-  size_t step_id_ = 0;
 };
 
 void SuffixTree::AddString() {
