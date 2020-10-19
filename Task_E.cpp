@@ -3,7 +3,6 @@
 //
 #include <iostream>
 #include <vector>
-#include <fstream>
 #include <tuple>
 #include <optional>
 #include <map>
@@ -41,8 +40,8 @@ struct ActivePoint {
 
 class SuffixTree {
  public:
-  SuffixTree(const std::string &s) : s(s) {
-    ap.node = &root;
+  SuffixTree(const std::string &s) : s_(s) {
+    ap_.node = &root_;
     AddString();
   }
 
@@ -62,74 +61,74 @@ class SuffixTree {
                  size_t first_size,
                  size_t &node_id);
 
-  const std::string &s;
-  Node root{};
-  ActivePoint ap{};
-  size_t remainder = 0;
-  size_t node_count = 0;
+  const std::string &s_;
+  Node root_{};
+  ActivePoint ap_{};
+  size_t remainder_ = 0;
+  size_t node_count_ = 0;
 };
 
 void SuffixTree::AddString() {
-  ++node_count;
+  ++node_count_;
 
-  for (size_t i = 0; i < s.size(); ++i)
-    AddSymbol(s[i], i);
+  for (size_t i = 0; i < s_.size(); ++i)
+    AddSymbol(s_[i], i);
 
   FinishString();
 }
 
 bool SuffixTree::NeedToSplit(char c) const {
-  if (ap.c)
-    return s[ap.node->to.at(ap.c).start + ap.length] != c;
+  if (ap_.c)
+    return s_[ap_.node->to.at(ap_.c).start + ap_.length] != c;
   else
-    return ap.node->to.find(c) == ap.node->to.end();
+    return ap_.node->to.find(c) == ap_.node->to.end();
 }
 
 void SuffixTree::FixLengthOverflow(size_t index) {
-  while (ap.c && ap.node->to[ap.c].end.has_value()
-      && ap.length > *ap.node->to[ap.c].end - ap.node->to[ap.c].start) {
+  while (ap_.c && ap_.node->to[ap_.c].end.has_value()
+      && ap_.length > *ap_.node->to[ap_.c].end - ap_.node->to[ap_.c].start) {
     ActivePoint new_ap{};
-    size_t node_len = ap.node->to[ap.c].Length();
-    char next_c = s[index - ap.length + node_len];
-    new_ap.node = ap.node->to[ap.c].node.get();
-    new_ap.length = ap.length - node_len;
+    size_t node_len = ap_.node->to[ap_.c].Length();
+    char next_c = s_[index - ap_.length + node_len];
+    new_ap.node = ap_.node->to[ap_.c].node.get();
+    new_ap.length = ap_.length - node_len;
     new_ap.c = next_c;
-    ap = new_ap;
+    ap_ = new_ap;
   }
 
-  if (ap.c) {
-    Transition &to = ap.node->to[ap.c];
+  if (ap_.c) {
+    Transition &to = ap_.node->to[ap_.c];
 
-    if (to.end.has_value() && ap.length == *to.end - to.start) {
-      ap.node = to.node.get();
-      ap.length = 0;
-      ap.c = '\0';
+    if (to.end.has_value() && ap_.length == *to.end - to.start) {
+      ap_.node = to.node.get();
+      ap_.length = 0;
+      ap_.c = '\0';
     }
   }
 }
 
 void SuffixTree::AddSymbol(char c, size_t index) {
-  ++remainder;
+  ++remainder_;
   Node *prev_created = nullptr;
 
-  while (remainder > 0) {
+  while (remainder_ > 0) {
     if (NeedToSplit(c)) {
-      if (ap.c) {
-        Transition &to = ap.node->to[ap.c];
+      if (ap_.c) {
+        Transition &to = ap_.node->to[ap_.c];
 
-        size_t split_end = to.start + ap.length;
+        size_t split_end = to.start + ap_.length;
 
         auto other_node = std::make_unique<Node>();
         to.node.swap(other_node);
         to.node->to.emplace(
-            std::make_pair(s[split_end], Transition(other_node.release(), split_end, to.end))
+            std::make_pair(s_[split_end], Transition(other_node.release(), split_end, to.end))
         );
         to.end = split_end;
         to.node->to.emplace(
             std::make_pair(c, Transition(new Node(), index, std::nullopt))
         );
 
-        node_count += 2;
+        node_count_ += 2;
 
         if (prev_created)
           prev_created->suffix_link = to.node.get();
@@ -137,37 +136,37 @@ void SuffixTree::AddSymbol(char c, size_t index) {
         prev_created = to.node.get();
       } else {
         Node *new_node = new Node();
-        ap.node->to.emplace(
+        ap_.node->to.emplace(
             std::make_pair(c, Transition(new_node, index, std::nullopt))
         );
-        ++node_count;
+        ++node_count_;
 
-        if (prev_created && ap.node != &root)
-          prev_created->suffix_link = ap.node;
+        if (prev_created && ap_.node != &root_)
+          prev_created->suffix_link = ap_.node;
 
         prev_created = nullptr;
       }
 
-      --remainder;
+      --remainder_;
 
-      if (ap.node == &root) {
-        if (ap.length > 0)
-          --ap.length;
+      if (ap_.node == &root_) {
+        if (ap_.length > 0)
+          --ap_.length;
 
-        ap.c = ap.length ? s[index - remainder + 1] : '\0';
+        ap_.c = ap_.length ? s_[index - remainder_ + 1] : '\0';
       } else {
-        ap.node = ap.node->suffix_link ? ap.node->suffix_link : &root;
+        ap_.node = ap_.node->suffix_link ? ap_.node->suffix_link : &root_;
       }
 
       FixLengthOverflow(index);
     } else {
-      if (!ap.c)
-        ap.c = c;
+      if (!ap_.c)
+        ap_.c = c;
 
-      ++ap.length;
+      ++ap_.length;
 
-      if (prev_created && ap.node != &root)
-        prev_created->suffix_link = ap.node;
+      if (prev_created && ap_.node != &root_)
+        prev_created->suffix_link = ap_.node;
 
       prev_created = nullptr;
 
@@ -178,22 +177,22 @@ void SuffixTree::AddSymbol(char c, size_t index) {
 }
 
 void SuffixTree::FinishString() {
-  FinishString(root);
+  FinishString(root_);
 }
 
 void SuffixTree::FinishString(Node &from) {
   for (auto &it : from.to) {
     if (!it.second.end.has_value())
-      it.second.end = s.size();
+      it.second.end = s_.size();
 
     FinishString(*it.second.node);
   }
 }
 
 void SuffixTree::PrintTree(std::ostream &out, size_t first_size) {
-  std::cout << node_count << '\n';
+  std::cout << node_count_ << '\n';
   size_t node_id = 0;
-  PrintNode(root, out, first_size, node_id);
+  PrintNode(root_, out, first_size, node_id);
 }
 
 void SuffixTree::PrintNode(Node &from,
