@@ -41,51 +41,51 @@ struct ActivePoint {
 
 class SuffixTree {
  public:
-  SuffixTree(const std::string &s) {
+  SuffixTree(const std::string &s) : s(s) {
     ap.node = &root;
-    AddString(s);
+    AddString();
   }
 
-  void PrintTree(std::ostream &out, const std::string &s, size_t first_size);
+  void PrintTree(std::ostream &out, size_t first_size);
 
  private:
-  void AddString(const std::string &s);
+  void AddString();
 
-  void AddSymbol(const std::string &s, char c, size_t index);
-  void FinishString(const std::string &s);
-  void FinishString(Node &from, size_t size);
-  bool NeedToSplit(const std::string &s, char c) const;
-  void FixLengthOverflow(const std::string &s, size_t index);
+  void AddSymbol(char c, size_t index);
+  void FinishString();
+  void FinishString(Node &from);
+  bool NeedToSplit(char c) const;
+  void FixLengthOverflow(size_t index);
 
   void PrintNode(Node &from,
                  std::ostream &out,
-                 const std::string &s,
                  size_t first_size,
                  size_t &node_id);
 
+  const std::string &s;
   Node root{};
   ActivePoint ap{};
   size_t remainder = 0;
   size_t node_count = 0;
 };
 
-void SuffixTree::AddString(const std::string &s) {
+void SuffixTree::AddString() {
   ++node_count;
 
   for (size_t i = 0; i < s.size(); ++i)
-    AddSymbol(s, s[i], i);
+    AddSymbol(s[i], i);
 
-  FinishString(s);
+  FinishString();
 }
 
-bool SuffixTree::NeedToSplit(const std::string &s, char c) const {
+bool SuffixTree::NeedToSplit(char c) const {
   if (ap.c)
     return s[ap.node->to.at(ap.c).start + ap.length] != c;
   else
     return ap.node->to.find(c) == ap.node->to.end();
 }
 
-void SuffixTree::FixLengthOverflow(const std::string &s, size_t index) {
+void SuffixTree::FixLengthOverflow(size_t index) {
   while (ap.c && ap.node->to[ap.c].end.has_value()
       && ap.length > *ap.node->to[ap.c].end - ap.node->to[ap.c].start) {
     ActivePoint new_ap{};
@@ -108,12 +108,12 @@ void SuffixTree::FixLengthOverflow(const std::string &s, size_t index) {
   }
 }
 
-void SuffixTree::AddSymbol(const std::string &s, char c, size_t index) {
+void SuffixTree::AddSymbol(char c, size_t index) {
   ++remainder;
   Node *prev_created = nullptr;
 
   while (remainder > 0) {
-    if (NeedToSplit(s, c)) {
+    if (NeedToSplit(c)) {
       if (ap.c) {
         Transition &to = ap.node->to[ap.c];
 
@@ -159,7 +159,7 @@ void SuffixTree::AddSymbol(const std::string &s, char c, size_t index) {
         ap.node = ap.node->suffix_link ? ap.node->suffix_link : &root;
       }
 
-      FixLengthOverflow(s, index);
+      FixLengthOverflow(index);
     } else {
       if (!ap.c)
         ap.c = c;
@@ -171,34 +171,33 @@ void SuffixTree::AddSymbol(const std::string &s, char c, size_t index) {
 
       prev_created = nullptr;
 
-      FixLengthOverflow(s, index);
+      FixLengthOverflow(index);
       break;
     }
   }
 }
 
-void SuffixTree::FinishString(const std::string &s) {
-  FinishString(root, s.size());
+void SuffixTree::FinishString() {
+  FinishString(root);
 }
 
-void SuffixTree::FinishString(Node &from, size_t size) {
+void SuffixTree::FinishString(Node &from) {
   for (auto &it : from.to) {
     if (!it.second.end.has_value())
-      it.second.end = size;
+      it.second.end = s.size();
 
-    FinishString(*it.second.node, size);
+    FinishString(*it.second.node);
   }
 }
 
-void SuffixTree::PrintTree(std::ostream &out, const std::string &s, size_t first_size) {
+void SuffixTree::PrintTree(std::ostream &out, size_t first_size) {
   std::cout << node_count << '\n';
   size_t node_id = 0;
-  PrintNode(root, out, s, first_size, node_id);
+  PrintNode(root, out, first_size, node_id);
 }
 
 void SuffixTree::PrintNode(Node &from,
                            std::ostream &out,
-                           const std::string &s,
                            size_t first_size,
                            size_t &node_id) {
   from.id = node_id;
@@ -210,7 +209,7 @@ void SuffixTree::PrintNode(Node &from,
     size_t start = from_first ? it.second.start : it.second.start - first_size;
     size_t end = from_first ? std::min(*it.second.end, first_size) : *it.second.end - first_size;
     out << from.id << ' ' << str_id << ' ' << start << ' ' << end << '\n';
-    PrintNode(*it.second.node, out, s, first_size, node_id);
+    PrintNode(*it.second.node, out, first_size, node_id);
   }
 }
 
@@ -223,5 +222,5 @@ int main() {
   std::string combined = s + t;
 
   SuffixTree suffix_tree(combined);
-  suffix_tree.PrintTree(std::cout, combined, s.size());
+  suffix_tree.PrintTree(std::cout, s.size());
 }
