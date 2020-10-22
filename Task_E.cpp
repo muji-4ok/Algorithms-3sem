@@ -42,16 +42,15 @@ class SuffixTree {
  public:
   SuffixTree(const std::string &s) : s_(s) {
     ap_.node = &root_;
-    AddString();
+    Initialize();
   }
 
   void PrintTree(std::ostream &out, size_t first_size);
 
  private:
-  void AddString();
+  void Initialize();
 
   void AddSymbol(char c, size_t index);
-  void FinishString();
   void FinishString(Node &from);
   bool NeedToSplit(char c) const;
   void FixLengthOverflow(size_t index);
@@ -68,13 +67,13 @@ class SuffixTree {
   size_t node_count_ = 0;
 };
 
-void SuffixTree::AddString() {
+void SuffixTree::Initialize() {
   ++node_count_;
 
   for (size_t i = 0; i < s_.size(); ++i)
     AddSymbol(s_[i], i);
 
-  FinishString();
+  FinishString(root_);
 }
 
 bool SuffixTree::NeedToSplit(char c) const {
@@ -174,10 +173,6 @@ void SuffixTree::AddSymbol(char c, size_t index) {
       break;
     }
   }
-}
-
-void SuffixTree::FinishString() {
-  FinishString(root_);
 }
 
 void SuffixTree::FinishString(Node &from) {
