@@ -7,16 +7,16 @@ struct Vector {
   int x;
   int y;
 
-  int dot(const Vector &other) const {
+  int Dot(const Vector &other) const {
     return x * other.x + y * other.y;
   }
 
-  int cross(const Vector &other) const {
+  int Cross(const Vector &other) const {
     return x * other.y - y * other.x;
   }
 
-  int orientation(const Vector &other) const {
-    int prod = cross(other);
+  int Orientation(const Vector &other) const {
+    int prod = Cross(other);
 
     if (prod > 0)
       return 1;
@@ -64,8 +64,8 @@ struct Segment {
         && (HighY() >= other.LowY() || other.HighY() >= LowY())))
       return false;
 
-    return dir().orientation(other.start - start) * dir().orientation(other.end - start) <= 0
-        && other.dir().orientation(start - other.start) * other.dir().orientation(end - other.start)
+    return dir().Orientation(other.start - start) * dir().Orientation(other.end - start) <= 0
+        && other.dir().Orientation(start - other.start) * other.dir().Orientation(end - other.start)
             <= 0;
   }
 };
