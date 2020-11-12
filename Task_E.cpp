@@ -12,10 +12,10 @@ struct Node;
 
 struct Transition {
   Transition() = default;
-  explicit Transition(Node *node,
+  explicit Transition(std::unique_ptr<Node> &&node,
                       size_t start,
                       std::optional<size_t> end)
-      : node(node), start(start), end(end) {}
+      : node(std::move(node)), start(start), end(end) {}
 
   size_t Length() const { return end.value() - start; }
 
@@ -120,11 +120,11 @@ void SuffixTree::AddSymbol(char c, size_t index) {
         auto other_node = std::make_unique<Node>();
         to_c.node.swap(other_node);
         to_c.node->to.emplace(
-            std::make_pair(s_[split_end], Transition(other_node.release(), split_end, to_c.end))
+            std::make_pair(s_[split_end], Transition(std::move(other_node), split_end, to_c.end))
         );
         to_c.end = split_end;
         to_c.node->to.emplace(
-            std::make_pair(c, Transition(new Node(), index, std::nullopt))
+            std::make_pair(c, Transition(std::make_unique<Node>(), index, std::nullopt))
         );
 
         node_count_ += 2;
@@ -135,7 +135,7 @@ void SuffixTree::AddSymbol(char c, size_t index) {
         prev_created = to_c.node.get();
       } else {
         ap_.node->to.emplace(
-            std::make_pair(c, Transition(new Node(), index, std::nullopt))
+            std::make_pair(c, Transition(std::make_unique<Node>(), index, std::nullopt))
         );
         ++node_count_;
 
