@@ -14,12 +14,12 @@ struct Node;
 
 struct Transition {
   Transition() = default;
-  explicit Transition(Node *node,
+  explicit Transition(std::unique_ptr<Node> &&node,
                       size_t start,
                       std::optional<size_t> end)
-      : node(node), start(start), end(end) {}
+      : node(std::move(node)), start(start), end(end) {}
 
-  size_t Length() const { return *end - start; }
+  size_t Length() const { return end.value() - start; }
 
   std::unique_ptr<Node> node = nullptr;
   // [start, end)
@@ -44,16 +44,15 @@ class SuffixTree {
  public:
   explicit SuffixTree(const std::string &s) : s_(s) {
     ap_.node = &root_;
-    AddString();
+    Initialize();
   }
 
   void ComputeCommonStrings(size_t first_length);
   std::string FindKthCommon(size_t k);
 
  private:
-  void AddString();
+  void Initialize();
   void AddSymbol(char c, size_t index);
-  void FinishString();
   void FinishString(Node &from);
   bool NeedToSplit(char c) const;
   void FixLengthOverflow(size_t index);
@@ -70,13 +69,13 @@ class SuffixTree {
   size_t node_count_ = 0;
 };
 
-void SuffixTree::AddString() {
+void SuffixTree::Initialize() {
   ++node_count_;
 
   for (size_t i = 0; i < s_.size(); ++i)
     AddSymbol(s_[i], i);
 
-  FinishString();
+  FinishString(root_);
 }
 
 bool SuffixTree::NeedToSplit(char c) const {
@@ -88,7 +87,7 @@ bool SuffixTree::NeedToSplit(char c) const {
 
 void SuffixTree::FixLengthOverflow(size_t index) {
   while (ap_.c && ap_.node->to[ap_.c].end.has_value()
-      && ap_.length > *ap_.node->to[ap_.c].end - ap_.node->to[ap_.c].start) {
+      && ap_.length > ap_.node->to[ap_.c].end.value() - ap_.node->to[ap_.c].start) {
     ActivePoint new_ap{};
     size_t node_len = ap_.node->to[ap_.c].Length();
     char next_c = s_[index - ap_.length + node_len];
@@ -99,10 +98,10 @@ void SuffixTree::FixLengthOverflow(size_t index) {
   }
 
   if (ap_.c) {
-    Transition &to = ap_.node->to[ap_.c];
+    Transition &to_c = ap_.node->to[ap_.c];
 
-    if (to.end.has_value() && ap_.length == *to.end - to.start) {
-      ap_.node = to.node.get();
+    if (to_c.end.has_value() && ap_.length == to_c.end.value() - to_c.start) {
+      ap_.node = to_c.node.get();
       ap_.length = 0;
       ap_.c = '\0';
     }
@@ -116,30 +115,29 @@ void SuffixTree::AddSymbol(char c, size_t index) {
   while (remainder_ > 0) {
     if (NeedToSplit(c)) {
       if (ap_.c) {
-        Transition &to = ap_.node->to[ap_.c];
+        Transition &to_c = ap_.node->to[ap_.c];
 
-        size_t split_end = to.start + ap_.length;
+        size_t split_end = to_c.start + ap_.length;
 
         auto other_node = std::make_unique<Node>();
-        to.node.swap(other_node);
-        to.node->to.emplace(
-            std::make_pair(s_[split_end], Transition(other_node.release(), split_end, to.end))
+        to_c.node.swap(other_node);
+        to_c.node->to.emplace(
+            std::make_pair(s_[split_end], Transition(std::move(other_node), split_end, to_c.end))
         );
-        to.end = split_end;
-        to.node->to.emplace(
-            std::make_pair(c, Transition(new Node(), index, std::nullopt))
+        to_c.end = split_end;
+        to_c.node->to.emplace(
+            std::make_pair(c, Transition(std::make_unique<Node>(), index, std::nullopt))
         );
 
         node_count_ += 2;
 
         if (prev_created)
-          prev_created->suffix_link = to.node.get();
+          prev_created->suffix_link = to_c.node.get();
 
-        prev_created = to.node.get();
+        prev_created = to_c.node.get();
       } else {
-        Node *new_node = new Node();
         ap_.node->to.emplace(
-            std::make_pair(c, Transition(new_node, index, std::nullopt))
+            std::make_pair(c, Transition(std::make_unique<Node>(), index, std::nullopt))
         );
         ++node_count_;
 
@@ -178,10 +176,6 @@ void SuffixTree::AddSymbol(char c, size_t index) {
   }
 }
 
-void SuffixTree::FinishString() {
-  FinishString(root_);
-}
-
 void SuffixTree::FinishString(Node &from) {
   for (auto &it : from.to) {
     if (!it.second.end.has_value())
@@ -214,7 +208,7 @@ std::tuple<bool, bool> SuffixTree::ComputeCommonStrings(Node &from,
       auto[first, second] = ComputeCommonStrings(*it.second.node,
                                                  first_length,
                                                  it.second.start,
-                                                 *it.second.end);
+                                                 it.second.end.value());
       has_first = has_first || first;
       has_second = has_second || second;
 
@@ -246,7 +240,7 @@ std::string SuffixTree::FindKthCommon(size_t k) {
         cur = it.second.node.get();
         result += s_.substr(to_start, to_end - to_start);
         to_start = it.second.start;
-        to_end = *it.second.end;
+        to_end = it.second.end.value();
         break;
       } else {
         k -= it.second.node->common_count;
