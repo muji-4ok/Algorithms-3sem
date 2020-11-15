@@ -9,8 +9,6 @@
 #include <utility>
 #include <tuple>
 #include <cassert>
-#include <random>
-#include <chrono>
 
 struct Vector {
   int64_t x;
@@ -54,10 +52,6 @@ Vector operator-(const Vector &left, const Vector &right) {
 
 Vector operator+(const Vector &left, const Vector &right) {
   return {left.x + right.x, left.y + right.y};
-}
-
-bool IsInside(int64_t x, int64_t start, int64_t end) {
-  return start <= x && x <= end;
 }
 
 struct Segment {
@@ -176,25 +170,6 @@ std::optional<std::pair<int, int>> IntersectAdjacent(const std::set<Segment>::it
   return std::nullopt;
 }
 
-bool SortCorrect(const std::vector<Event> &events, const std::vector<Segment> &segments) {
-  std::set<Segment> open_segments;
-
-  for (Event e : events)
-    if (e.start) {
-      if (!open_segments.insert(segments[e.id]).second)
-        return false;
-    } else {
-      auto it = open_segments.find(segments[e.id]);
-
-      if (it == open_segments.end())
-        return false;
-
-      open_segments.erase(it);
-    }
-
-  return open_segments.empty();
-}
-
 std::optional<std::pair<int, int>> FindIntersecting(const std::vector<Segment> &segments) {
   std::vector<Event> events;
   std::set<Segment> open_segments;
@@ -206,13 +181,6 @@ std::optional<std::pair<int, int>> FindIntersecting(const std::vector<Segment> &
 
   std::sort(events.begin(), events.end());
 
-//  if (!SortCorrect(events, segments)) {
-//    throw std::runtime_error("Incorrect sort");
-//    while (true) {
-//      std::cout << "asdkaj\n";
-//    }
-//  }
-
   for (Event e : events)
     if (e.start) {
       auto it = open_segments.insert(segments[e.id]).first;
@@ -222,14 +190,7 @@ std::optional<std::pair<int, int>> FindIntersecting(const std::vector<Segment> &
         return intersection.value();
     } else {
       auto it = open_segments.find(segments[e.id]);
-
-      if (it == open_segments.end()) {
-//        while (true) {
-//          std::cout << "asdkaj\n";
-//        }
-        throw std::runtime_error("tried to delete a non-existent segment");
-      }
-
+      assert(it != open_segments.end());
       auto intersection = IntersectAdjacent(it, open_segments);
 
       if (intersection.has_value())
@@ -241,48 +202,7 @@ std::optional<std::pair<int, int>> FindIntersecting(const std::vector<Segment> &
   return std::nullopt;
 }
 
-std::optional<std::pair<int, int>> FindIntersectingNaive(const std::vector<Segment> &segments) {
-  for (int i = 0; i < segments.size(); ++i)
-    for (int j = i + 1; j < segments.size(); ++j)
-      if (segments[i].Intersects(segments[j]))
-        return std::make_pair(i, j);
-
-  return std::nullopt;
-}
-
-void RandomTest() {
-  std::random_device rd;  //Will be used to obtain a seed for the random number engine
-  std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
-  std::uniform_int_distribution<int64_t> distribution(-10, 10);
-
-  auto random_segment = [&distribution, &gen](int id) -> Segment {
-    return {{distribution(gen), distribution(gen)}, {distribution(gen), distribution(gen)}, id};
-  };
-
-  for (int test_id = 0; test_id < 1000000; ++test_id) {
-    std::cout << "Test number " << test_id << ":\n";
-    std::vector<Segment> segments;
-
-    for (int i = 0; i < 3; ++i) {
-      Segment segment = random_segment(i);
-      std::cout << segment.start.x << ' ' << segment.start.y << ' ' << segment.end.x << ' '
-                << segment.end.y << '\n';
-      segments.push_back(segment);
-    }
-
-    auto result = FindIntersecting(segments);
-    auto real_result = FindIntersectingNaive(segments);
-
-    if (result.has_value() != real_result.has_value() || (result.has_value()
-        && !(segments[result.value().first].Intersects(segments[result.value().second]))))
-      throw std::runtime_error("WRONG");
-  }
-}
-
 int main() {
-//  RandomTest();
-//  return 0;
-
   int n;
   std::cin >> n;
   std::vector<Segment> segments;
@@ -290,18 +210,10 @@ int main() {
   for (int i = 0; i < n; ++i) {
     int64_t x1, y1, x2, y2;
     std::cin >> x1 >> y1 >> x2 >> y2;
-
-    if (x1 == x2 && y1 == y2)
-      throw std::runtime_error("zero-length segment???");
-
     segments.push_back({{x1, y1}, {x2, y2}, i});
-
-    if (segments.back() < segments.back())
-      throw std::runtime_error("a < a???");
   }
 
   auto intersection = FindIntersecting(segments);
-//  auto real_intersection = FindIntersectingNaive(segments);
 
   if (intersection.has_value()) {
     std::pair<int, int> val = intersection.value();
