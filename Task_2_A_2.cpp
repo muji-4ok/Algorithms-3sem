@@ -60,8 +60,8 @@ struct Segment {
   }
 
   bool Intersects(Segment other) const {
-    if (!((HighX() >= other.LowX() || other.HighX() >= LowX())
-        && (HighY() >= other.LowY() || other.HighY() >= LowY())))
+    if (HighX() < other.LowX() || other.HighX() < LowX() || HighY() < other.LowY()
+        || other.HighY() < LowY())
       return false;
 
     return dir().Orientation(other.start - start) * dir().Orientation(other.end - start) <= 0
