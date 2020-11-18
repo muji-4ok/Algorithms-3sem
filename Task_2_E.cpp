@@ -82,7 +82,7 @@ struct Segment {
     return (start.y * DiffX() + (x - start.x) * DiffY()) - target_y * DiffX();
   }
 
-  // the same as above
+  // The same as above
   int64_t CompareY(const Segment &other) const {
     if (DiffX() == 0 && other.DiffX() == 0)
       return LowY() - other.LowY();
