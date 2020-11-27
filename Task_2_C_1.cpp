@@ -8,21 +8,23 @@
 #include <unordered_set>
 #include <set>
 
+using Coordinate = int;
+
 struct Vector {
-  int x;
-  int y;
-  int z;
+  Coordinate x;
+  Coordinate y;
+  Coordinate z;
   int id = -1;
 
   Vector Cross(const Vector &other) const {
     return {y * other.z - z * other.y, z * other.x - x * other.z, x * other.y - y * other.x};
   }
 
-  int Dot(const Vector &other) const {
+  Coordinate Dot(const Vector &other) const {
     return x * other.x + y * other.y + z * other.z;
   }
 
-  int SqrDist() const {
+  Coordinate SqrDist() const {
     return Dot(*this);
   }
 
@@ -132,7 +134,7 @@ std::ostream &operator<<(std::ostream &out, const Face &face) {
   return out;
 }
 
-Vector FoldPoint(Segment edge, const std::vector<Vector> &points) {
+Vector FoldPoint(const Segment &edge, const std::vector<Vector> &points) {
   Vector best = edge.start;
 
   for (Vector p : points) {
@@ -203,7 +205,7 @@ int main() {
     std::vector<Vector> points;
 
     for (int i = 0; i < n; ++i) {
-      int x, y, z;
+      Coordinate x, y, z;
       std::cin >> x >> y >> z;
       points.push_back({x, y, z, i});
     }
