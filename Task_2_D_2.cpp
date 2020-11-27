@@ -6,11 +6,13 @@
 #include <vector>
 #include <cmath>
 
-struct Vector {
-  long long x;
-  long long y;
+using Coordinate = long long;
 
-  long long Cross(const Vector &other) const {
+struct Vector {
+  Coordinate x;
+  Coordinate y;
+
+  Coordinate Cross(const Vector &other) const {
     return x * other.y - y * other.x;
   }
 
@@ -32,12 +34,12 @@ std::vector<Vector> ReadPolygon() {
   size_t n;
   std::cin >> n;
 
-  std::vector<Vector> polygon;
+  std::vector<Vector> polygon(n);
 
   for (size_t i = 0; i < n; ++i) {
-    long long x, y;
+    Coordinate x, y;
     std::cin >> x >> y;
-    polygon.push_back({x, y});
+    polygon[i] = {x, y};
   }
 
   return polygon;
@@ -94,7 +96,7 @@ std::vector<Vector> MinkovskiSum(const std::vector<Vector> &polygon1,
 }
 
 long double PolygonArea(const std::vector<Vector> &polygon) {
-  long long oriented_area = 0;
+  Coordinate oriented_area = 0;
   Vector first = polygon.front();
 
   for (size_t i = 1; i < polygon.size() - 1; ++i)
