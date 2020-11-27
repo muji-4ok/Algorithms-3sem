@@ -10,27 +10,35 @@
 #include <tuple>
 #include <cassert>
 
-struct Vector {
-  int64_t x;
-  int64_t y;
+using Coordinate = long long;
 
-  int64_t Dot(const Vector &other) const {
+enum Orientation : int {
+  CounterClockwise = -1,
+  SameAngle = 0,
+  Clockwise = 1
+};
+
+struct Vector {
+  Coordinate x;
+  Coordinate y;
+
+  Coordinate Dot(const Vector &other) const {
     return x * other.x + y * other.y;
   }
 
-  int64_t Cross(const Vector &other) const {
+  Coordinate Cross(const Vector &other) const {
     return x * other.y - y * other.x;
   }
 
-  int64_t Orientation(const Vector &other) const {
-    int64_t prod = Cross(other);
+  Orientation Orient(const Vector &other) const {
+    Coordinate prod = Cross(other);
 
     if (prod > 0)
-      return 1;
+      return Clockwise;
     else if (prod < 0)
-      return -1;
+      return CounterClockwise;
     else
-      return 0;
+      return SameAngle;
   }
 
   bool operator<(const Vector &other) const {
@@ -68,13 +76,13 @@ struct Segment {
   Vector end;
   int id;
 
-  // if < 0 then lower
-  // if = 0 then equal
-  // if > 0 then greater
-  int64_t CompareYAt(int64_t x, int64_t target_y) const {
-    if (DiffX() <= 0)
-      throw std::runtime_error("diff <= 0");
-
+  // Compare value of this segment's Y coordinate at X position 'x' to 'target_y'
+  //
+  // Return:
+  // if (this.y < target_y) then < 0
+  // if (this.y = target_y) then = 0
+  // if (this.y > target_y) then > 0
+  Coordinate CompareYAt(Coordinate x, Coordinate target_y) const {
     // y = start.y + (x - start.x) / DiffX() * DiffY()
     // y < target_y   <=>   DiffX() * y < target_y * DiffX()
     //   =                              =
@@ -82,8 +90,16 @@ struct Segment {
     return (start.y * DiffX() + (x - start.x) * DiffY()) - target_y * DiffX();
   }
 
-  // The same as above
-  int64_t CompareY(const Segment &other) const {
+  // Compare two segments by their Y coordinate at X position max{this->start.x, other.start.x}
+  // We want to keep everything in ints, and we know that at least one of the segments has an
+  // int Y coordinate, but the other might not, which is why we have CompareYAt, which
+  // uses a slightly different equation for comparison, so as to keep everything in ints
+  //
+  // Return:
+  // if (*this < other) then < 0
+  // if (*this = other) then = 0
+  // if (*this > other) then > 0
+  Coordinate CompareY(const Segment &other) const {
     if (DiffX() == 0 && other.DiffX() == 0)
       return LowY() - other.LowY();
     else if (DiffX() == 0)
@@ -95,23 +111,23 @@ struct Segment {
              CompareYAt(other.start.x, other.start.y);
   }
 
-  int64_t DiffX() const {
+  Coordinate DiffX() const {
     return end.x - start.x;
   }
 
-  int64_t DiffY() const {
+  Coordinate DiffY() const {
     return end.y - start.y;
   }
 
-  int64_t LowY() const {
+  Coordinate LowY() const {
     return std::min(start.y, end.y);
   }
 
-  int64_t HighY() const {
+  Coordinate HighY() const {
     return std::max(start.y, end.y);
   }
 
-  Vector dir() const {
+  Vector Dir() const {
     return end - start;
   }
 
@@ -120,13 +136,12 @@ struct Segment {
         || other.HighY() < LowY())
       return false;
 
-    return dir().Orientation(other.start - start) * dir().Orientation(other.end - start) <= 0
-        && other.dir().Orientation(start - other.start) * other.dir().Orientation(end - other.start)
-            <= 0;
+    return Dir().Orient(other.start - start) * Dir().Orient(other.end - start) <= 0
+        && other.Dir().Orient(start - other.start) * other.Dir().Orient(end - other.start) <= 0;
   }
 
   bool operator<(const Segment &other) const {
-    int64_t y_comparison = CompareY(other);
+    Coordinate y_comparison = CompareY(other);
     return y_comparison < 0 || (y_comparison == 0
         && std::tie(start, end, id) < std::tie(other.start, other.end, other.id));
   }
@@ -208,7 +223,7 @@ int main() {
   std::vector<Segment> segments;
 
   for (int i = 0; i < n; ++i) {
-    int64_t x1, y1, x2, y2;
+    Coordinate x1, y1, x2, y2;
     std::cin >> x1 >> y1 >> x2 >> y2;
     segments.push_back({{x1, y1}, {x2, y2}, i});
   }
