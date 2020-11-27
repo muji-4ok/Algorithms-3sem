@@ -3,27 +3,35 @@
 //
 #include <iostream>
 
-struct Vector {
-  int x;
-  int y;
+using Coordinate = int;
 
-  int Dot(const Vector &other) const {
+enum Orientation : int {
+  CounterClockwise = -1,
+  SameAngle = 0,
+  Clockwise = 1
+};
+
+struct Vector {
+  Coordinate x;
+  Coordinate y;
+
+  Coordinate Dot(const Vector &other) const {
     return x * other.x + y * other.y;
   }
 
-  int Cross(const Vector &other) const {
+  Coordinate Cross(const Vector &other) const {
     return x * other.y - y * other.x;
   }
 
-  int Orientation(const Vector &other) const {
-    int prod = Cross(other);
+  Orientation Orient(const Vector &other) const {
+    Coordinate prod = Cross(other);
 
     if (prod > 0)
-      return 1;
+      return Clockwise;
     else if (prod < 0)
-      return -1;
+      return CounterClockwise;
     else
-      return 0;
+      return SameAngle;
   }
 };
 
@@ -39,46 +47,45 @@ struct Segment {
   Vector start;
   Vector end;
 
-  int LowX() const {
+  Coordinate LowX() const {
     return std::min(start.x, end.x);
   }
 
-  int HighX() const {
+  Coordinate HighX() const {
     return std::max(start.x, end.x);
   }
 
-  int LowY() const {
+  Coordinate LowY() const {
     return std::min(start.y, end.y);
   }
 
-  int HighY() const {
+  Coordinate HighY() const {
     return std::max(start.y, end.y);
   }
 
-  Vector dir() const {
+  Vector Dir() const {
     return end - start;
   }
 
-  bool Intersects(Segment other) const {
+  bool Intersects(const Segment &other) const {
     if (HighX() < other.LowX() || other.HighX() < LowX() || HighY() < other.LowY()
         || other.HighY() < LowY())
       return false;
 
-    return dir().Orientation(other.start - start) * dir().Orientation(other.end - start) <= 0
-        && other.dir().Orientation(start - other.start) * other.dir().Orientation(end - other.start)
-            <= 0;
+    return Dir().Orient(other.start - start) * Dir().Orient(other.end - start) <= 0
+        && other.Dir().Orient(start - other.start) * other.Dir().Orient(end - other.start) <= 0;
   }
 };
 
 std::istream &operator>>(std::istream &in, Segment &segment) {
-  int sx, sy, ex, ey;
+  Coordinate sx, sy, ex, ey;
   in >> sx >> sy >> ex >> ey;
   segment = {{sx, sy}, {ex, ey}};
   return in;
 }
 
 int main() {
-  Segment path{};
+  Segment path;
   std::cin >> path;
 
   int n;
@@ -87,7 +94,7 @@ int main() {
   int intersects = 0;
 
   for (int i = 0; i < n; ++i) {
-    Segment river{};
+    Segment river;
     std::cin >> river;
     intersects += path.Intersects(river);
   }
