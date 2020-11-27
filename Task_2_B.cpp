@@ -8,31 +8,39 @@
 #include <cmath>
 #include <iomanip>
 
+using Coordinate = long long;
+
+enum Orientation : int {
+  CounterClockwise = -1,
+  SameAngle = 0,
+  Clockwise = 1
+};
+
 struct Vector {
-  long long x;
-  long long y;
+  Coordinate x;
+  Coordinate y;
 
-  long long SqrDist() const { return x * x + y * y; }
+  Coordinate SqrDist() const { return x * x + y * y; }
 
-  double Dist() const { return std::sqrt((double) (x * x + y * y)); }
+  double Dist() const { return std::sqrt(x * x + y * y); }
 
-  long long Dot(const Vector &other) const {
+  Coordinate Dot(const Vector &other) const {
     return x * other.x + y * other.y;
   }
 
-  long long Cross(const Vector &other) const {
+  Coordinate Cross(const Vector &other) const {
     return x * other.y - y * other.x;
   }
 
-  long long Orientation(const Vector &other) const {
-    long long prod = Cross(other);
+  Orientation Orient(const Vector &other) const {
+    Coordinate prod = Cross(other);
 
     if (prod > 0)
-      return 1;
+      return Clockwise;
     else if (prod < 0)
-      return -1;
+      return CounterClockwise;
     else
-      return 0;
+      return SameAngle;
   }
 
   bool operator==(const Vector &other) const {
@@ -61,7 +69,7 @@ std::vector<Vector> BuildConvexHull(std::vector<Vector> points) {
       [&lowest](const Vector &left, const Vector &right) -> bool {
         Vector dir_left = left - lowest;
         Vector dir_right = right - lowest;
-        long long orientation = dir_left.Orientation(dir_right);
+        Coordinate orientation = dir_left.Orient(dir_right);
 
         return orientation > 0 || (orientation == 0 && dir_left.SqrDist() < dir_right.SqrDist());
       }
@@ -73,9 +81,7 @@ std::vector<Vector> BuildConvexHull(std::vector<Vector> points) {
     if (p == hull.back())
       continue;
 
-    while (hull.size() >= 2
-        && (hull[hull.size() - 1] - hull[hull.size() - 2]).Orientation(p - hull[hull.size() - 1])
-            < 0)
+    while (hull.size() >= 2 && (hull.back() - hull[hull.size() - 2]).Orient(p - hull.back()) < 0)
       hull.pop_back();
 
     hull.push_back(p);
@@ -101,7 +107,7 @@ int main() {
   std::vector<Vector> points;
 
   for (int i = 0; i < n; ++i) {
-    long long x, y;
+    Coordinate x, y;
     std::cin >> x >> y;
     points.push_back({x, y});
   }
