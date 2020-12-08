@@ -12,11 +12,6 @@ struct Position {
   bool operator!=(const Position &other) const { return !(*this == other); }
 };
 
-std::ostream &operator<<(std::ostream &out, const Position &pos) {
-  out << "(" << pos.x << ", " << pos.y << ")";
-  return out;
-}
-
 // From the perspective of the runner
 enum GameResult {
   Wins,
@@ -39,11 +34,6 @@ struct State {
     return !(*this == other);
   }
 };
-
-std::ostream &operator<<(std::ostream &out, const State &state) {
-  out << state.runner << " " << state.terminator << " " << (state.runners_turn ? "R" : "T");
-  return out;
-}
 
 struct VisitInfo {
   int visited;
@@ -178,46 +168,13 @@ std::unordered_map<State, VisitInfo> InitializeStates(const std::unordered_set<P
   return states_info;
 }
 
-void PrintFullState(State state, const std::unordered_set<Position> &walls) {
-  bool has_wall[8][8] = {};
-
-  for (const auto &it : walls)
-    has_wall[it.y][it.x] = true;
-
-  for (int y = 5; y < 8; ++y) {
-    for (int x = 0; x < 4; ++x) {
-      Position pos{x, y};
-
-      if (pos == state.runner)
-        std::cout << '2';
-      else if (pos == state.terminator)
-        std::cout << '3';
-      else if (has_wall[y][x])
-        std::cout << '1';
-      else
-        std::cout << '0';
-    }
-
-    std::cout << '\n';
-  }
-}
-
 GameResult ResolveGame(State start, const std::unordered_set<Position> &walls) {
   std::unordered_map<State, VisitInfo> states_info = InitializeStates(walls);
   std::vector<State> stack;
 
   for (const auto &it : states_info)
-    if (it.second.result == Wins || it.second.result == Loses) {
+    if (it.second.result == Wins || it.second.result == Loses)
       stack.push_back(it.first);
-
-//      if (it.first == start)
-//      std::cout << it.first << " --- " << (it.second.result == Wins ? "W" : "L") << '\n';
-
-//      std::cout << "--------------\n";
-//      std::cout << "Result: " << (it.second.result == Wins ? "W" : "L") << '\n';
-//      PrintFullState(it.first, walls);
-//      std::cout << '\n';
-    }
 
   while (!stack.empty()) {
     State top = stack.back();
